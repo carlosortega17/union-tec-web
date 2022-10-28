@@ -7,10 +7,10 @@
     <div class="col-8">
       <div class="card mb-4">
         <div class="card-header">
-          <h5>Crea un club de {{type}}</h5>
+          <h5>Crea grupo de asesorias</h5>
         </div>
         <div class="card-body">
-          <form action="/panel/{{type}}" method="post">
+          <form action="/panel/consultant" method="post">
             <div class="form-group">
               <input type="text" name="name" id="name" placeholder="Nombre" class="form-control" required>
             </div>
@@ -25,11 +25,10 @@
             <div class="form-group">
               <input type="text" name="days" id="days" placeholder="Dias de la semana (separe con ,)" class="form-control" required>
             </div>
-            <input type="hidden" name="type" id="type" value="{{type}}" required>
             <div class="form-group">
               <textarea
                 class="form-control"
-                placeholder="Describe el club"
+                placeholder="Describe grupo"
                 name="description" id="description" cols="30" rows="3" required></textarea>
             </div>
             <div class="form-group text-right">
@@ -50,8 +49,8 @@
       {{#if errorAlert}}
         {{> modal_alert}}
       {{/if}}
-      {{#if clubs}}
-        {{#each clubs}}
+      {{#if consultants}}
+        {{#each consultants}}
           <div class="card mb-4">
             <div class="card-header">
               <h5>{{name}}</h5>
@@ -59,7 +58,7 @@
             <div class="card-body">
               <p>{{description}}</p>
               <div class="text-right">
-                <form action="/panel/{{type}}/participe/{{_id}}" method="post">
+                <form action="/panel/consultant/participe/{{_id}}" method="post">
                   <button type="submit" class="btn btn-secondary">Participar</button>
                 </form>
               </div>

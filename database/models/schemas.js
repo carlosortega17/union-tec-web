@@ -62,6 +62,10 @@ const Event = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'users',
   },
+  date: {
+    type: String,
+    required: true,
+  },
   title: {
     type: String,
     required: true,

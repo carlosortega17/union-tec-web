@@ -2,7 +2,14 @@ const mongoose = require('mongoose');
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const {
-  PostModel, UserModel, NoticeModel, EventModel, ClubModel,
+  PostModel,
+  UserModel,
+  NoticeModel,
+  EventModel,
+  ClubModel,
+  ConsultantModel,
+  DirectoryModel,
+  FriendModel,
 } = require('../database/models/schemas');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 
@@ -128,11 +135,13 @@ router.get('/events', async (req, res) => {
 router.post('/events', async (req, res) => {
   const { page } = req.query;
   const { user } = req.session;
-  const { title, content } = req.body;
-  if (!user || !title || !content) {
+  const { title, content, date } = req.body;
+  if (!user || !title || !content || !date) {
     return res.render('panel/events', { name: 'Agregar evento', errorAlert: 'Error en el formulario' });
   }
-  await EventModel.create({ user: user.id, title, content });
+  await EventModel.create({
+    user: user.id, title, content, date,
+  });
   const events = await EventModel.find()
     .limit(10)
     .skip((page && page * 10) ?? 0)
@@ -142,7 +151,7 @@ router.post('/events', async (req, res) => {
     .lean();
   const count = await EventModel.find().count();
   const pages = Math.ceil(count / 10);
-  return res.render('panel/notice', {
+  return res.render('panel/events', {
     events, count: count ?? 0, pages, page: page ?? 0,
   });
 });
@@ -171,14 +180,14 @@ router.post('/events/participe/:id', async (req, res) => {
     .lean();
   const count = await EventModel.find().count();
   const pages = Math.ceil(count / 10);
-  return res.render('panel/notice', {
+  return res.render('panel/events', {
     events, count: count ?? 0, pages, page: page ?? 0,
   });
 });
 
-router.get('/club', async (req, res) => {
+router.get('/ocio', async (req, res) => {
   const { page } = req.query;
-  const clubs = await ClubModel.find()
+  const clubs = await ClubModel.find({ type: 'ocio' })
     .limit(10)
     .skip((page && page * 10) ?? 0)
     .sort('-_id')
@@ -192,7 +201,7 @@ router.get('/club', async (req, res) => {
   });
 });
 
-router.post('/club', async (req, res) => {
+router.post('/ocio', async (req, res) => {
   const { page } = req.query;
   const { user } = req.session;
   const {
@@ -212,7 +221,7 @@ router.post('/club', async (req, res) => {
     type,
     participants: [new mongoose.Types.ObjectId(user.id)],
   });
-  const clubs = await ClubModel.find()
+  const clubs = await ClubModel.find({ type: 'ocio' })
     .limit(10)
     .skip((page && page * 10) ?? 0)
     .sort('-_id')
@@ -226,8 +235,21 @@ router.post('/club', async (req, res) => {
   });
 });
 
-router.get('/study', async (req, res) => {
+router.post('/ocio/participe/:id', async (req, res) => {
+  const { id } = req.params;
   const { page } = req.query;
+  const { user } = req.session;
+  const exist = await ClubModel.find(
+    { _id: id, participants: { $in: [new mongoose.Types.ObjectId(user.id)] } },
+  ).exec();
+  if (exist.length > 0) {
+    return res.render('panel/club', { name: 'Participar en el club', errorAlert: 'Usted ya esta participando en este evento' });
+  }
+  await ClubModel.findByIdAndUpdate(id, {
+    $push: {
+      participants: new mongoose.Types.ObjectId(user.id),
+    },
+  }).lean();
   const clubs = await ClubModel.find()
     .limit(10)
     .skip((page && page * 10) ?? 0)
@@ -237,12 +259,28 @@ router.get('/study', async (req, res) => {
     .lean();
   const count = await ClubModel.find().count();
   const pages = Math.ceil(count / 10);
-  return res.render('panel/study', {
-    clubs, count: count ?? 0, pages, page: page ?? 0, type: 'ocio',
+  return res.render('panel/club', {
+    clubs, count: count ?? 0, pages, page: page ?? 0,
   });
 });
 
-router.post('/study', async (req, res) => {
+router.get('/estudio', async (req, res) => {
+  const { page } = req.query;
+  const clubs = await ClubModel.find({ type: 'estudio' })
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .populate({ path: 'participants', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await ClubModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/club', {
+    clubs, count: count ?? 0, pages, page: page ?? 0, type: 'estudio',
+  });
+});
+
+router.post('/estudio', async (req, res) => {
   const { page } = req.query;
   const { user } = req.session;
   const {
@@ -250,7 +288,7 @@ router.post('/study', async (req, res) => {
   } = req.body;
   console.log(req.body);
   if (!user || !name || !description || !checkin || !departure || !days || !type) {
-    return res.render('panel/study', { name: 'Agregar Club', errorAlert: 'Error en el formulario' });
+    return res.render('panel/club', { name: 'Agregar Club', errorAlert: 'Error en el formulario' });
   }
   await ClubModel.create({
     user: user.id,
@@ -262,6 +300,35 @@ router.post('/study', async (req, res) => {
     type,
     participants: [new mongoose.Types.ObjectId(user.id)],
   });
+  const clubs = await ClubModel.find({ type: 'estudio' })
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .populate({ path: 'participants', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await ClubModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/club', {
+    clubs, count: count ?? 0, pages, page: page ?? 0, type: 'estudio',
+  });
+});
+
+router.post('/estudio/participe/:id', async (req, res) => {
+  const { id } = req.params;
+  const { page } = req.query;
+  const { user } = req.session;
+  const exist = await ClubModel.find(
+    { _id: id, participants: { $in: [new mongoose.Types.ObjectId(user.id)] } },
+  ).exec();
+  if (exist.length > 0) {
+    return res.render('panel/club', { name: 'Participar en el club', errorAlert: 'Usted ya esta participando en este evento' });
+  }
+  await ClubModel.findByIdAndUpdate(id, {
+    $push: {
+      participants: new mongoose.Types.ObjectId(user.id),
+    },
+  }).lean();
   const clubs = await ClubModel.find()
     .limit(10)
     .skip((page && page * 10) ?? 0)
@@ -271,8 +338,86 @@ router.post('/study', async (req, res) => {
     .lean();
   const count = await ClubModel.find().count();
   const pages = Math.ceil(count / 10);
-  return res.render('panel/study', {
-    clubs, count: count ?? 0, pages, page: page ?? 0, type: 'study',
+  return res.render('panel/club', {
+    clubs, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.get('/consultant', async (req, res) => {
+  const { page } = req.query;
+  const consultants = await ConsultantModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .populate({ path: 'participants', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await ConsultantModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/consultant', {
+    consultants, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.post('/consultant', async (req, res) => {
+  const { page } = req.query;
+  const { user } = req.session;
+  const {
+    name, description, checkin, departure, days,
+  } = req.body;
+  if (!user || !name || !description || !checkin || !departure || !days) {
+    return res.render('panel/consultant', { name: 'Agregar Club', errorAlert: 'Error en el formulario' });
+  }
+  await ConsultantModel.create({
+    user: user.id,
+    name,
+    description,
+    checkin,
+    departure,
+    days,
+    participants: [new mongoose.Types.ObjectId(user.id)],
+  });
+  const consultants = await ConsultantModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .populate({ path: 'participants', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await ConsultantModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/consultant', {
+    consultants, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.get('/directory', async (req, res) => {
+  const { page } = req.query;
+  const directorys = await DirectoryModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await DirectoryModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/directory', {
+    directorys, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.get('/friend', async (req, res) => {
+  const { page } = req.query;
+  const friends = await FriendModel.find({ user: req.session.user.id })
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await FriendModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/friend', {
+    friends, count: count ?? 0, pages, page: page ?? 0,
   });
 });
 

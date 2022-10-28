@@ -12,6 +12,10 @@
         <div class="card-body">
           <form action="/panel/events" method="post">
             <div class="form-group">
+              <label for="date">Fecha del evento</label>
+              <input type="date" name="date" id="date" placeholder="Fecha" class="form-control" required>
+            </div>
+            <div class="form-group">
               <input type="text" name="title" id="title" placeholder="Titulo" class="form-control" required>
             </div>
             <div class="form-group">
@@ -28,6 +32,7 @@
       </div>
       <div class="card mb-4">
         <div class="card-body text-center">
+          <span>Total de elementos: {{count}}</span>&nbsp;
           <a id="left" href="/panel/events?page={{back page}}" class="btn btn-secondary"><i class="fa fa-arrow-left"></i></a>
           Pagina: {{page}}
           <a id="right" href="/panel/events?page={{next page pages}}" class="btn btn-secondary"><i class="fa fa-arrow-right"></i></a>
