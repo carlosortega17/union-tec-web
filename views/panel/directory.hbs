@@ -7,15 +7,21 @@
     <div class="col-8">
       <div class="card mb-4">
         <div class="card-header">
-          <h5>Agrega una publicación</h5>
+          <h5>Agregar direccion de interes</h5>
         </div>
         <div class="card-body">
-          <form action="/panel" method="post">
+          <form action="/panel/directory" method="post">
+            <div class="form-group">
+              <input type="text" name="url" id="url" placeholder="https://www.direccion.com" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <input type="text" name="title" id="title" placeholder="Titulo de la url" class="form-control" required>
+            </div>
             <div class="form-group">
               <textarea
                 class="form-control"
-                placeholder="Habla con la comunidad"
-                name="content" id="content" cols="30" rows="3" required></textarea>
+                placeholder="Describe la url"
+                name="description" id="description" cols="30" rows="3" required></textarea>
             </div>
             <div class="form-group text-right">
               <button type="submit" class="btn btn-secondary" style="padding-left: 2.5rem; padding-right: 2.5rem;">Publicar</button>
@@ -36,14 +42,18 @@
       {{#if errorAlert}}
         {{> modal_alert}}
       {{/if}}
-      {{#if posts}}
-        {{#each posts}}
+      {{#if directorys}}
+        {{#each directorys}}
           <div class="card mb-4">
             <div class="card-header">
-              <span class="text-muted">Creado por: <a href="/panel/user/{{user._id}}">{{user.fullname}}</a></span>
+              <h5>{{title}}</h5>
             </div>
             <div class="card-body">
-              <p>{{content}}</p>
+              <p>{{description}}</p>
+              <a href="{{url}}">{{url}}</a>
+            </div>
+            <div class="card-footer">
+              <span class="text-muted">Creado por: <a href="/panel/user/{{user._id}}">{{user.fullname}}</a></span>
             </div>
           </div>
         {{/each}}

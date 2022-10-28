@@ -8,7 +8,12 @@
     <div class="card-body">
       Contacto: <a href="mailto:{{user.email}}">{{user.email}}</a><br>
       Se registro: {{formatDate user.createdAt}}<br>
-      Numero de publicaciones: {{numPosts}}
+      Numero de publicaciones: {{numPosts}}<br><br>
+      <!--
+      <form action="/panel/friend/{{user._id}}" method="post">
+        <button type="submit" class="btn btn-primary">Agregar como amigo</button>
+      </form>
+      -->
     </div>
   </div>
   {{/if}}

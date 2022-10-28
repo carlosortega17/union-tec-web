@@ -391,9 +391,62 @@ router.post('/consultant', async (req, res) => {
   });
 });
 
+router.post('/consultant/participe/:id', async (req, res) => {
+  const { id } = req.params;
+  const { page } = req.query;
+  const { user } = req.session;
+  const exist = await ConsultantModel.find(
+    { _id: id, participants: { $in: [new mongoose.Types.ObjectId(user.id)] } },
+  ).exec();
+  if (exist.length > 0) {
+    return res.render('panel/consultant', { name: 'Participar en la asesoria', errorAlert: 'Usted ya esta participando en este evento' });
+  }
+  await ConsultantModel.findByIdAndUpdate(id, {
+    $push: {
+      participants: new mongoose.Types.ObjectId(user.id),
+    },
+  }).lean();
+  const consultants = await ConsultantModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .populate({ path: 'participants', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await ConsultantModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/club', {
+    consultants, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
 router.get('/directory', async (req, res) => {
   const { page } = req.query;
   const directorys = await DirectoryModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await DirectoryModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/directory', {
+    directorys, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.post('/directory', async (req, res) => {
+  const { user } = req.session;
+  const { title, url, description } = req.body;
+  if (!user || !title || !url || !description) {
+    return res.render('panel/directory', { name: 'Agregar publicacion', errorAlert: 'Error en el formulario' });
+  }
+  await DirectoryModel.create({
+    title, url, description, user: user.id,
+  });
+  const { page } = req.query;
+  const directorys = await DirectoryModel
+    .find()
     .limit(10)
     .skip((page && page * 10) ?? 0)
     .sort('-_id')

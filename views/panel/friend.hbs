@@ -5,24 +5,7 @@
       {{> lateral }}
     </div>
     <div class="col-8">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5>Agrega una publicación</h5>
-        </div>
-        <div class="card-body">
-          <form action="/panel" method="post">
-            <div class="form-group">
-              <textarea
-                class="form-control"
-                placeholder="Habla con la comunidad"
-                name="content" id="content" cols="30" rows="3" required></textarea>
-            </div>
-            <div class="form-group text-right">
-              <button type="submit" class="btn btn-secondary" style="padding-left: 2.5rem; padding-right: 2.5rem;">Publicar</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <h4 class="mb-4">Lista de amigos</h4>
       <div class="card mb-4">
         <div class="card-body text-center">
           <span>Total de elementos: {{count}}</span>&nbsp;
@@ -36,14 +19,14 @@
       {{#if errorAlert}}
         {{> modal_alert}}
       {{/if}}
-      {{#if posts}}
-        {{#each posts}}
+      {{#if friends}}
+        {{#each friends}}
           <div class="card mb-4">
             <div class="card-header">
               <span class="text-muted">Creado por: <a href="/panel/user/{{user._id}}">{{user.fullname}}</a></span>
             </div>
             <div class="card-body">
-              <p>{{content}}</p>
+              <p>{{friend.fullname}}</p>
             </div>
           </div>
         {{/each}}
