@@ -1,0 +1,33 @@
+{{> logged }}
+<div class="d-flex justify-content-center" style="margin-top: 76px">
+  {{#if userInfo}}
+  <div class="card p-0">
+    <div class="card-header">
+      <h5>Nombre completo: {{userInfo.fullname}}</h5>
+    </div>
+    <div class="card-body">
+      <form action="/panel/profile" method="post">
+        <div class="form-group">
+          <input type="password" class="form-control" placeholder="Contraseña anterior" name="original" id="password">
+        </div>
+        <div class="form-group">
+          <input type="password" class="form-control" placeholder="Contraseña nueva" name="password" id="password">
+        </div>
+        <div class="form-group text-right">
+          <button type="submit" class="btn btn-secondary">Actualizar</button>
+        </div>
+      </form>
+    </div>
+    <div class="card-footer">
+      Correo electronico: <a href="mailto:{{userInfo.email}}">{{userInfo.email}}</a><br>
+      Se registro: {{formatDate userInfo.createdAt}}<br>
+    </div>
+  </div>
+  {{#if errorAlert}}
+    {{> modal_alert}}
+  {{/if}}
+  {{#if message}}
+    {{> modal_alert}}
+  {{/if}}
+  {{/if}}
+</div>
