@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const {
+  PostModel,
   UserModel,
   NoticeModel,
   EventModel,
@@ -34,16 +35,85 @@ router.post('/profile', async (req, res) => {
   return res.render('panel/profile', { userInfo, name: 'Actualizacion de contraseña', errorAlert: 'La contraseña es incorrecta' });
 });
 
-// Controller Posts
-router.use(require('./controllers/main.controller'));
-// Controller Notice
-router.use(require('./controllers/notice.controller'));
+router.get('/', async (req, res) => {
+  const { page } = req.query;
+  const posts = await PostModel
+    .find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await PostModel.find().count();
+  const pages = Math.ceil(count / 10);
+  res.render('panel/index', {
+    posts, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.post('/', async (req, res) => {
+  const { user } = req.session;
+  const { content } = req.body;
+  if (!user || !content) {
+    return res.render('panel/index', { name: 'Agregar publicacion', errorAlert: 'Error en el formulario' });
+  }
+  await PostModel.create({ content, user: user.id });
+  const { page } = req.query;
+  const posts = await PostModel
+    .find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await PostModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/index', {
+    posts, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
 
 router.get('/user/:id', async (req, res) => {
   const { id } = req.params;
   const user = await UserModel.findById(id).lean();
   const numPosts = await PostModel.find({ user: user._id }).count();
   res.render('panel/user', { user, numPosts: numPosts ?? 0 });
+});
+
+router.get('/notice', async (req, res) => {
+  const { page } = req.query;
+  const notices = await NoticeModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await NoticeModel.find().count();
+  const pages = Math.ceil(count / 10);
+  res.render('panel/notice', {
+    notices, count: count ?? 0, pages, page: page ?? 0,
+  });
+});
+
+router.post('/notice', async (req, res) => {
+  const { page } = req.query;
+  const { user } = req.session;
+  const { title, content } = req.body;
+  if (!user || !title || !content) {
+    return res.render('panel/notice', { name: 'Agregar noticia', errorAlert: 'Error en el formulario' });
+  }
+  await NoticeModel.create({ user: user.id, title, content });
+  const notices = await NoticeModel.find()
+    .limit(10)
+    .skip((page && page * 10) ?? 0)
+    .sort('-_id')
+    .populate({ path: 'user', model: UserModel, select: '_id fullname email' })
+    .lean();
+  const count = await NoticeModel.find().count();
+  const pages = Math.ceil(count / 10);
+  return res.render('panel/notice', {
+    notices, count: count ?? 0, pages, page: page ?? 0,
+  });
 });
 
 router.get('/events', async (req, res) => {
